@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css" integrity="sha384-AysaV+vQoT3kOAXZkl02PThvDr8HYKPZhNT5h/CXfBThSRXQ6jW5DO2ekP5ViFdi" crossorigin="anonymous">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/js/bootstrap.min.js" integrity="sha384-BLiI7JTZm+JWlgKa0M0kGRpJbF2J8q+qreVrKBC47e3K6BW78kGLrCkeRX6I9RoK" crossorigin="anonymous"></script>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="../../favicon.ico">
+
+
+    <!-- Bootstrap core CSS -->
+    <link href="../../dist/css/bootstrap.min.css" rel="stylesheet">
+
+	<!-- d3.js library -->    
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<style> /* set the CSS */
+		body { font: 16px Times;}
+		path { 
+			stroke: #2554C7;
+			stroke-width: 3;
+			fill: none;
+		}
+		.axis path,
+		.axis line {
+			stroke: black;
+			stroke: 4,4;
+			
+			stroke-width: 1;
+			shape-rendering: crispEdges;
+		}
+		rect.pane {
+			fill: none;
+			pointer-events: all;
+		}
+		.tooltip {
+			position: absolute;
+			text-align: center;               
+			padding: 6px;
+			font: 18px Times;
+			background: #36393a;
+			border: 0px;
+			border-radius: 10px;
+			pointer-events: none;
+			color : white;
+			border: 2px solid #888;
+		}
+		.intro{
+			margin-left: 40px;
+		}
+		.intro1{
+			margin-top: 10px;
+			margin-left: 40px;
+			color: black;
+		}
+		.tag{
+			color: white;
+			font: 24px Times;
+		}
+	</style>
+</head>
+<body>
+ <nav class="navbar navbar-static-top navbar-dark bg-inverse">
+      <a class="tag"; href="index0.html">January</a>
+      <a class="tag"; href="index1.html">February</a>
+      <a class="tag"; href="index2.html">March</a>
+      <a class="tag"; href="index3.html">April</a>
+      <a class="tag"; href="index4.html">May</a>
+      </nav>
+
+<h1 class="intro1"> Rainfall Data of 2009</h1>
+<script>
+
+	// Set the dimensions of the canvas / graph
+	var margin = {top: 30, right: 50, bottom: 30, left: 50},
+		width = 700 - margin.left - margin.right,
+		height = 400 - margin.top - margin.bottom;
+
+	// Parse the date 
+	var parseDate = d3.time.format("%d-%b-%y").parse;
+	var timeFormat = d3.time.format("%b-%-d");
+
+	// declaration for 'div'
+	var tooltip = d3.select("body").append("div").attr("class", "tooltip hidden");
+
+	// Set the ranges
+	var x = d3.time.scale().range([0, width]);
+	var y = d3.scale.linear().range([height, 0]);
+
+	var zoom = d3.behavior.zoom()
+	   .on("zoom", draw);
+
+	// Define the axes
+	var xAxis = d3.svg.axis().scale(x)
+		.orient("bottom")
+		.ticks(5)
+		.tickFormat(function(d){
+			return timeFormat(d);
+		});
+
+	var yAxis = d3.svg.axis().scale(y)
+		.orient("left").ticks(5);
+
+	// Define the line
+	var valueline = d3.svg.line()
+		.x(function(d) { return x(d.date); })
+		.y(function(d) { return y(d.rainsum); });
+		
+	// Adds the svg canvas
+	var svg = d3.select("body")
+		.append("svg")
+			.attr("width", width + margin.left + margin.right)
+			.attr("height", height + margin.top + margin.bottom)
+		.append("g")
+			.attr("transform", 
+				  "translate(" + margin.left + "," + margin.top + ")");
+
+	// Get the data
+	d3.csv("data.csv", function(error, data) {
+		data.forEach(function(d) {
+			d.date = parseDate(d.date);
+			d.rainsum = +d.rainsum;
+		});
+
+		svg.append("clipPath")
+			.attr("id", "clip")
+			.append("rect")
+			.attr("x", x(0))
+			.attr("y", y(1))
+			.attr("width", x(1) - x(0))
+			.attr("height", y(0) - y(1));
+
+		// Scale the range of the data
+		x.domain(d3.extent(data, function(d) { return d.date; }));
+		y.domain([0, d3.max(data, function(d) { return d.rainsum; })]);
+		zoom.x(x);
+
+		// Add the valueline path.
+		svg.append("path")
+			.attr("class", "line")
+			.data([data])
+			.attr("d", valueline)
+			.attr("clip-path", "url(#clip)");
+
+		// Add the X Axis
+		svg.append("g")
+			.attr("class", "x axis")
+			.attr("transform", "translate(0," + (height) + ")")
+			.call(xAxis);
+
+		// Add the Y Axis
+		svg.append("g")
+			.attr("class", "y axis")
+			.call(yAxis);
+
+		svg.append("rect")
+			.attr("class", "pane")
+			.attr("width", width)
+			.attr("height", height)
+			.call(zoom);
+
+		//Add the scatterplot
+		svg.selectAll("circle")
+			.data(data)
+			.enter()
+			.append("circle")
+			.attr("class", "line-points")
+			.attr("r", 4)
+			.attr("cx", function(d) { return x(d.date); })
+			.attr("cy", function(d) { return y(d.rainsum); })
+			.on("mouseover", function(d) {
+				var html = '<div>'+timeFormat(d.date)+'</div><div>'+d.rainsum+'</div>';
+				tooltip.classed("hidden", false)
+					.html(html)
+					.style("left", (d3.event.pageX) + "px")
+					.style("top", (d3.event.pageY - 5) + "px")
+					.style("opacity", 1);
+			})
+			.on("mouseout", function(d) {
+				tooltip.classed("hidden", true).style("opacity", 0);
+			})
+			.attr("clip-path", "url(#clip)");
+	});
+	function draw() {
+		svg.select("g.x.axis").call(xAxis);
+		svg.select("path.line").attr("d", valueline);
+		svg.selectAll(".line-points")
+			.attr("cx", function(d) { return x(d.date); })
+			.attr("cy", function(d) { return y(d.rainsum); })
+	}
+</script>
+<p style="font: 20px Times;" class="intro"><strong>X-axix</strong> 		represents the 	days of the month<br />
+ <strong>Y-axis</strong> shows the maximum measurements of the rainfall data
+ <br /><strong>Each black dot</strong>: shows the day and the amount of rain (hover over me)</p>
+<hr />
+<p style="font: 24px Times; margin-left: 5px;"><strong>Abstract</strong>: This line chart figure shows the measurements of the rainfall data from January to the end of April from PICH city</p>
+</body>
