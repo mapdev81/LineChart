@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<!-- d3.js library -->    
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<style> /* set the CSS */
+		body { font: 12px Times;}
+		path { 
+			stroke: green;
+			stroke-width: 3.5;
+			fill: none;
+		}
+		.axis path,
+		.axis line {
+			fill: black;
+			stroke: red;
+			stroke-width: 1;
+			shape-rendering: crispEdges;
+		}
+		rect.pane {
+			fill: none;
+			pointer-events: all;
+		}
+		.tooltip {
+			position: absolute;
+			text-align: center;               
+			padding: 2px;
+			font: 12px sans-serif;
+			background: #36393a;
+			border: 0px;
+			border-radius: 2px;
+			pointer-events: none;
+			color : white;
+			border: 1px solid #888;
+		}
+	</style>
+</head>
+<body>
+</body>
+<script>
+
+	// Set the dimensions of the canvas / graph
+	var margin = {top: 30, right: 50, bottom: 30, left: 50},
+		width = 600 - margin.left - margin.right,
+		height = 400 - margin.top - margin.bottom;
+
+	// Parse the date 
+	var parseDate = d3.time.format("%d-%b-%y").parse;
+	var timeFormat = d3.time.format("%b-%-d");
+
+	// declaration for 'div'
+	var tooltip = d3.select("body").append("div").attr("class", "tooltip hidden");
+
+	// Set the ranges
+	var x = d3.time.scale().range([0, width]);
+	var y = d3.scale.linear().range([height, 0]);
+
+	var zoom = d3.behavior.zoom()
+	   .on("zoom", draw);
+
+	// Define the axes
+	var xAxis = d3.svg.axis().scale(x)
+		.orient("bottom")
+		.ticks(5)
+		.tickFormat(function(d){
+			return timeFormat(d);
+		});
+
+	var yAxis = d3.svg.axis().scale(y)
+		.orient("left").ticks(5);
+
+	// Define the line
+	var valueline = d3.svg.line()
+		.x(function(d) { return x(d.date); })
+		.y(function(d) { return y(d.rainsum); });
+		
+	// Adds the svg canvas
+	var svg = d3.select("body")
+		.append("svg")
+			.attr("width", width + margin.left + margin.right)
+			.attr("height", height + margin.top + margin.bottom)
+		.append("g")
+			.attr("transform", 
+				  "translate(" + margin.left + "," + margin.top + ")");
+
+	// Get the data
+	d3.csv("data.csv", function(error, data) {
+		data.forEach(function(d) {
+			d.date = parseDate(d.date);
+			d.rainsum = +d.rainsum;
+		});
+
+		svg.append("clipPath")
+			.attr("id", "clip")
+			.append("rect")
+			.attr("x", x(0))
+			.attr("y", y(1))
+			.attr("width", x(1) - x(0))
+			.attr("height", y(0) - y(1));
+
+		// Scale the range of the data
+		x.domain(d3.extent(data, function(d) { return d.date; }));
+		y.domain([0, d3.max(data, function(d) { return d.rainsum; })]);
+		zoom.x(x);
+
+		// Add the valueline path.
+		svg.append("path")
+			.attr("class", "line")
+			.data([data])
+			.attr("d", valueline)
+			.attr("clip-path", "url(#clip)");
+
+		// Add the X Axis
+		svg.append("g")
+			.attr("class", "x axis")
+			.attr("transform", "translate(0," + (height) + ")")
+			.call(xAxis);
+
+		// Add the Y Axis
+		svg.append("g")
+			.attr("class", "y axis")
+			.call(yAxis);
+
+		svg.append("rect")
+			.attr("class", "pane")
+			.attr("width", width)
+			.attr("height", height)
+			.call(zoom);
+
+		//Add the scatterplot
+		svg.selectAll("circle")
+			.data(data)
+			.enter()
+			.append("circle")
+			.attr("class", "line-points")
+			.attr("r", 5)
+			.attr("cx", function(d) { return x(d.date); })
+			.attr("cy", function(d) { return y(d.rainsum); })
+			.on("mouseover", function(d) {
+				var html = '<div>'+timeFormat(d.date)+'</div><div>'+d.rainsum+'</div>';
+				tooltip.classed("hidden", false)
+					.html(html)
+					.style("left", (d3.event.pageX) + "px")
+					.style("top", (d3.event.pageY - 5) + "px")
+					.style("opacity", 1);
+			})
+			.on("mouseout", function(d) {
+				tooltip.classed("hidden", true).style("opacity", 0);
+			})
+			.attr("clip-path", "url(#clip)");
+	});
+	
+	// zoom in function
+	/*var svg = d3.select("body")
+	  .append("svg")
+	  .attr("width", width + margin.left + margin.right * 8)
+	  .attr("height", height + margin.top + margin.bottom * 8)
+	  .call(d3.behavior.zoom(x).on("zoom", function () {
+		svg.attr("transform", "translate(" + margin.left + "," + margin.top + ")" + " scale(" + d3.event.scale + ")")
+	  }))
+	  .append("g")*/
+	function draw() {
+		svg.select("g.x.axis").call(xAxis);
+		svg.select("path.line").attr("d", valueline);
+		svg.selectAll(".line-points")
+			.attr("cx", function(d) { return x(d.date); })
+			.attr("cy", function(d) { return y(d.rainsum); })
+	}
+</script>

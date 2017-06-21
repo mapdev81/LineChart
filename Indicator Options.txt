@@ -1,0 +1,17 @@
+Indicator Options:
+
+CurrencyIndex - Selects main currency to display (USDX, EURX, GBPX, CHFX, CADX, JPYX, AUDX, NZDX)
+Candlesticks - If set to true, chart displays candlesticks. If false = Bars
+LabelSize - Size of main currency label on chart
+TextSize - Size of other currency labels on chart
+HistoryBars - Number of bars displayed by the indicator. If HistoryBars = 0, all bars in chart will be displayed
+ColorUSD - Color of USD line and label
+ColorEUR - Color of EUR line and label
+ColorGBP - Color of GBP line and label
+ColorCHF - Color of CHF line and label
+ColorCAD - Color of CAD line and label
+ColorJPY - Color of JPY line and label
+ColorAUD - Color of AUD line and label
+ColorNZD - Color of NZD line and label
+ColorUpBar - Color of up bar in the indicator
+ColorDownBar - Color of down bar in the indicator
